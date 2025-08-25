@@ -15,8 +15,6 @@ jobs:
     env:
       MELONLOADER_REPO: https://api.github.com/repos/LavaGang/MelonLoader/releases/latest
       MELONLOADER_ASSET_NAME: MelonLoader.x64.zip
-      OUTPUT_URL: ${{ secrets.OUTPUT_URL }}
-      OUTPUT_FILE: Output.7z
 
     steps:
     - name: Checkout code
@@ -25,21 +23,26 @@ jobs:
     - name: Setup 7zip
       run: |
         choco install 7zip.install -y
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
         
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
+
+    - name: Download NuGet.exe
+      run: |
+        Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile nuget.exe
       
-    - name: Install NuGet Packages
-      run: nuget restore .\Sinmai-Assist.sln
-      shell: pwsh
+    - name: Restore NuGet packages (for .NET Framework)
+      run: |
+        .\nuget.exe restore .\Sinmai-Assist.sln
       
     - name: Initialize Libraries
       run: |
         mkdir cache
         Invoke-WebRequest -Uri https://github.com/LavaGang/MelonLoader/releases/download/v0.6.4/MelonLoader.x64.zip -OutFile "$(Get-Location)\cache\MelonLoader.x64.zip"        
         7z x "$(Get-Location)\cache\MelonLoader.x64.zip" -o"$(Get-Location)\Libs"     
-        Invoke-WebRequest -Uri ${{ secrets.LIBRARY_URL }} -OutFile "$(Get-Location)\cache\Output.7z"
-        7z x "$(Get-Location)\cache\Output.7z" -o"$(Get-Location)\Libs"
     
     - name: Build
       run: |
